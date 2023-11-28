@@ -1,6 +1,6 @@
 // Import the shader code
-import vsSource from './shaders/vertexShader.js';
-import fsSource from './shaders/fragmentShader.js';
+import vsSource from "./shaders/vertexShader.js";
+import fsSource from "./shaders/fragmentShader.js";
 
 let squareRotation = 0.0;
 let deltaTime = 0;
@@ -18,12 +18,16 @@ function rearrange(mesh) {
   var newIndices_3 = [];
 
   for (let i = 0; i < mesh.indices.length; i += 3) {
-      // Categorize based on the Y-coordinate
-
+    // Categorize based on the Y-coordinate
+    let sampleVertex = vec3FromArray(mesh.vertices, mesh.indices(i + 0));
+    if (sampleVertex.y < -8) newIndices_1.push(mesh.indices.slice(i, i + 3));
+    if (sampleVertex.y < 9) newIndices_2.push(mesh.indices.slice(i, i + 3));
+    else newIndices_3.push(mesh.indices.slice(i, i + 3));
   }
 
-  // Concatenate all new indices
+  mesh.indices = newIndices_1.concat(newIndices_2.concat(newIndices_3));
 
+  // Concatenate all new indices
 }
 // == END TASK 1a == //
 
@@ -34,6 +38,17 @@ function getDecorativeBallCenters(mesh) {
   var centerGroup1 = vec3.create();
   var centerGroup2 = vec3.create();
   var centerGroup3 = vec3.create();
+
+  for (let i = 0; i < mesh.vertices.length; i += 3) {
+    let sampleVertex = vec3FromArray(mesh.vertices, i);
+    if (sampleVertex.y < -8) centerGroup1 += sampleVertex.y;
+    if (sampleVertex.y < 9) centerGroup2 += sampleVertex.y;
+    else centerGroup3 += sampleVertex.y;
+  }
+
+  centerGroup1 /= mesh.vertices / 9;
+  centerGroup2 /= mesh.vertices / 9;
+  centerGroup3 /= mesh.vertices / 9;
 
   return [centerGroup1, centerGroup2, centerGroup3];
 }
@@ -55,22 +70,19 @@ function sortDecorativeBalls(ballCoordinates, uModelViewMatrix) {
 
 // TODO: you can play with different alpha values.
 function calcVertexColor(pCoordinate) {
-  if (pCoordinate[1] < -8)
-    return vec4.fromValues(1.0, 0.25, 0.25, 0.5);
-  if (pCoordinate[1] < 9)
-    return vec4.fromValues(0.25, 1.0, 0.25, 0.5);
+  if (pCoordinate[1] < -8) return vec4.fromValues(1.0, 0.25, 0.25, 0.5);
+  if (pCoordinate[1] < 9) return vec4.fromValues(0.25, 1.0, 0.25, 0.5);
   return vec4.fromValues(0.25, 0.25, 1.0, 0.5);
 }
 
 // ==== END HELPER FUNCTION ====
 
 function main() {
-
   // Get the canvas declared in the html
   const canvas = document.getElementById("glcanvas");
 
   if (canvas == null) {
-    alert ("Cannot instantiate canvas. Consider using vscode-preview-server.");
+    alert("Cannot instantiate canvas. Consider using vscode-preview-server.");
   }
 
   // Initialize the GL context
@@ -92,18 +104,18 @@ function main() {
   // gl.getExtension('OES_element_index_uint');
 
   // load in the mesh (this reads all vertex and face information from the .obj file)
-  var objStr = document.getElementById('decorations.obj').innerHTML;
+  var objStr = document.getElementById("decorations.obj").innerHTML;
   var mesh = new OBJ.Mesh(objStr);
   OBJ.initMeshBuffers(gl, mesh);
 
   // == TASK 1 == //
   // TODO: Fill the code in each function
-  
+
   // == TASK 1a == //
-  //   rearrange(mesh);
+  // rearrange(mesh);
 
   // == TASK 1b == //
-  //   var decorativeBallCenters = getDecorativeBallCenters(mesh);
+  // var decorativeBallCenters = getDecorativeBallCenters(mesh);
 
   // == END TASK 1 == //
 
@@ -111,18 +123,22 @@ function main() {
   for (var i = 0; i < mesh.vertices.length; i++) {
     mesh.vertexNormals[i] = 0;
   }
-  
+
   // helper function to extract vertex position from array of vertices
   function vec3FromArray(vertices, index) {
-    return vec3.fromValues(vertices[3*index+0], vertices[3*index+1], vertices[3*index+2]);
+    return vec3.fromValues(
+      vertices[3 * index + 0],
+      vertices[3 * index + 1],
+      vertices[3 * index + 2]
+    );
   }
-  
+
   // go through all triangles
-  for (var i = 0; i < mesh.indices.length/3; i++) {
+  for (var i = 0; i < mesh.indices.length / 3; i++) {
     // get vertices of this triangle
-    var v0 = vec3FromArray(mesh.vertices, mesh.indices[3*i+0]);
-    var v1 = vec3FromArray(mesh.vertices, mesh.indices[3*i+1]);
-    var v2 = vec3FromArray(mesh.vertices, mesh.indices[3*i+2]);
+    var v0 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 0]);
+    var v1 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 1]);
+    var v2 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 2]);
     // compute edges `a` and `b`
     var a = vec3.create();
     vec3.subtract(a, v1, v0);
@@ -134,32 +150,31 @@ function main() {
     vec3.normalize(n, n);
     // add normal to all vertex normals of this triangle
     for (var j = 0; j < 3; j++) {
-      var vIndex = mesh.indices[3*i+j];
+      var vIndex = mesh.indices[3 * i + j];
       for (var k = 0; k < 3; k++) {
-        mesh.vertexNormals[3*vIndex+k] += n[k] * Math.acos(vec3.dot(a, b)); // Note: weighting by the angle is more accurate, but not necessary in this example (negligible effect)
+        mesh.vertexNormals[3 * vIndex + k] += n[k] * Math.acos(vec3.dot(a, b)); // Note: weighting by the angle is more accurate, but not necessary in this example (negligible effect)
       }
     }
   }
-  
-  // since we've added normals of all triangles a vertex is connected to, 
+
+  // since we've added normals of all triangles a vertex is connected to,
   // we need to normalize the vertex normals
-  for (var i = 0; i < mesh.vertexNormals.length/3; i++) {
+  for (var i = 0; i < mesh.vertexNormals.length / 3; i++) {
     var n = vec3FromArray(mesh.vertexNormals, i);
     vec3.normalize(n, n);
     // and copy back to mesh normal array
     for (var k = 0; k < 3; k++) {
-      mesh.vertexNormals[3*i+k] = n[k];
+      mesh.vertexNormals[3 * i + k] = n[k];
     }
   }
 
   // initialize the color array (Hint: remember that mesh.vertices is of length 3 * number of vertices (x, y, z each))
-  mesh.vertexColors = new Array(mesh.vertices.length/3*4).fill(1.0);
+  mesh.vertexColors = new Array((mesh.vertices.length / 3) * 4).fill(1.0);
 
   // for each vertex set a custom color
-  for (var i = 0; i < mesh.vertices.length/3; i++) {
-    var new_color = calcVertexColor(vec3FromArray(mesh.vertices, i));  
-    for (var k = 0; k < 4; k++)
-      mesh.vertexColors[4*i+k] = new_color[k];
+  for (var i = 0; i < mesh.vertices.length / 3; i++) {
+    var new_color = calcVertexColor(vec3FromArray(mesh.vertices, i));
+    for (var k = 0; k < 4; k++) mesh.vertexColors[4 * i + k] = new_color[k];
   }
 
   // Initialize a shader program; this is where all the lighting
@@ -169,7 +184,11 @@ function main() {
   // Vertices
   var tmpBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tmpBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertices), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertices),
+    gl.STATIC_DRAW
+  );
   var location = gl.getAttribLocation(shaderProgram, "aVertexPosition");
   gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
@@ -177,7 +196,11 @@ function main() {
   // Vertex Normals
   var tmpBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tmpBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexNormals), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertexNormals),
+    gl.STATIC_DRAW
+  );
   var location = gl.getAttribLocation(shaderProgram, "aVertexNormal");
   gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
@@ -185,7 +208,11 @@ function main() {
   // Vertex Colors
   var tmpBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, tmpBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexColors), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertexColors),
+    gl.STATIC_DRAW
+  );
   var location = gl.getAttribLocation(shaderProgram, "aVertexColor");
   gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
@@ -193,7 +220,11 @@ function main() {
   // Faces (i.e., vertex indices for forming the triangles)
   var tmpBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, tmpBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.indices), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(mesh.indices),
+    gl.STATIC_DRAW
+  );
 
   // Draw the scene
   let then = 0;
@@ -209,11 +240,15 @@ function main() {
     // Disable Depth Test since we will do the object-wise depth sorting
     // gl.enable(gl.DEPTH_TEST); // Enable depth testing
     // gl.depthFunc(gl.LEQUAL);  // Near things obscure far things
-    gl.enable(gl.CULL_FACE);     // Simplify the problem by ignoring the back faces of each ball
+    gl.enable(gl.CULL_FACE); // Simplify the problem by ignoring the back faces of each ball
 
     // == TASK 2 == //
     // TODO: Enable blending mode and set up the blending function
 
+    gl.enable(gl.BLEND);
+
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     // TODO: Please also change the necessary code in vertexShader
 
     // == END TASK 2 == /
@@ -223,8 +258,13 @@ function main() {
 
     // define a light position in world coordinates
     let r = 55.0;
-    var lightPos = vec4.fromValues(Math.sin(Math.PI/2) * r, Math.cos(Math.PI/2) * r, -60.0, 1.0);
-    
+    var lightPos = vec4.fromValues(
+      Math.sin(Math.PI / 2) * r,
+      Math.cos(Math.PI / 2) * r,
+      -60.0,
+      1.0
+    );
+
     // build the projection and model-view matrices
     const fieldOfView = (45 * Math.PI) / 180; // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -236,40 +276,64 @@ function main() {
     // maps object space to world space
     // translation by (0, -25, -60), rotation by -pi/2 around x, rotation by pi/3 around z
     const modelViewMatrix = mat4.fromValues(
-           0.5,       0,  -0.86602,       0, 
-      -0.86602,       0,      -0.5,       0, 
-             0,       1,         0,       0, 
-             0,     -25,       -60,       1
-      );
+      0.5,
+      0,
+      -0.86602,
+      0,
+      -0.86602,
+      0,
+      -0.5,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      -25,
+      -60,
+      1
+    );
 
     mat4.rotate(
       modelViewMatrix, // destination matrix
       modelViewMatrix, // matrix to rotate
-      squareRotation/2, // amount to rotate in radians
-      [0, 0, 1], // axis to rotate around
-    ); 
+      squareRotation / 2, // amount to rotate in radians
+      [0, 0, 1] // axis to rotate around
+    );
 
     // set the shader program
     gl.useProgram(shaderProgram);
 
     // bind the location of the uniform variables
-    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uProjectionMatrix"), false, projectionMatrix);
-    gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram, "uModelViewMatrix"), false, modelViewMatrix);
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+      false,
+      projectionMatrix
+    );
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+      false,
+      modelViewMatrix
+    );
     gl.uniform4fv(gl.getUniformLocation(shaderProgram, "uLightPos"), lightPos);
-    
+
     // ======== TASK 3 ========
     // TODO: Draw the mesh according the calculated depth order, from furthest to the nearest
-
     // ======== TASK 3a ========
     // TODO: Get orders based on current modelViewMatrix
     // var orders = sortDecorativeBalls(decorativeBallCenters, modelViewMatrix);
-    
-    // ======== TASK 3b ======== // 
+
+    // ======== TASK 3b ======== //
     // TODO: Draw the balls in order
     var indicesPerBall = mesh.indices.length;
     var offset = 0;
     var byteOffset = offset * 2; // Multiply by 2 because gl.UNSIGNED_SHORT is 2 bytes
-    gl.drawElements(gl.TRIANGLES, indicesPerBall, gl.UNSIGNED_SHORT, byteOffset);
+    gl.drawElements(
+      gl.TRIANGLES,
+      indicesPerBall,
+      gl.UNSIGNED_SHORT,
+      byteOffset
+    );
 
     // ====== END TASK 3 ======
 
@@ -299,8 +363,8 @@ function initShaderProgram(gl, vsSource, fsSource) {
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     alert(
       `Unable to initialize the shader program: ${gl.getProgramInfoLog(
-        shaderProgram,
-      )}`,
+        shaderProgram
+      )}`
     );
     return null;
   }
@@ -324,7 +388,7 @@ function loadShader(gl, type, source) {
   // See if it compiled successfully
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert(
-      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`,
+      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`
     );
     gl.deleteShader(shader);
     return null;

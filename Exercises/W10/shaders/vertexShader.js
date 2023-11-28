@@ -1,4 +1,4 @@
-export default /*glsl*/`
+export default /*glsl*/ `
   attribute vec4 aVertexPosition;
   attribute vec4 aVertexColor;
   attribute vec3 aVertexNormal;
@@ -41,6 +41,6 @@ export default /*glsl*/`
 
     // === TASK 2 === //
     // TODO: Update alpha value
-    vColor[3] = 1.0; // alpha value
+    vColor[3] = 0.3; // alpha value
   }
   `;
