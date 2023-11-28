@@ -1,6 +1,6 @@
 // Import the shader code
-import vsSource from './shaders/vertexShader.js';
-import fsSource from './shaders/fragmentShader.js';
+import vsSource from "./shaders/vertexShader.js";
+import fsSource from "./shaders/fragmentShader.js";
 
 let squareRotation = 0.0;
 let deltaTime = 0;
@@ -9,18 +9,18 @@ main();
 
 // == HELPER FUNCTION FOR TASK 3a ==
 function calcVertexColor(pCoordinate) {
-  // TODO: assign a new color
-  return vec4.fromValues(0.3, 0.3, 0.3, 1.0);
+  if (pCoordinate[1] < -8) return vec4.fromValues(1.0, 0.25, 0.25, 1.0);
+  if (pCoordinate[1] < 9) return vec4.fromValues(0.25, 1.0, 0.25, 1.0);
+  return vec4.fromValues(0.25, 0.25, 1.0, 1.0);
 }
 // ==== END HELPER FUNCTION ====
 
 function main() {
-
   // Get the canvas declared in the html
   const canvas = document.getElementById("glcanvas");
 
   if (canvas == null) {
-    alert ("Cannot instantiate canvas. Consider using vscode-preview-server.");
+    alert("Cannot instantiate canvas. Consider using vscode-preview-server.");
   }
 
   // Initialize the GL context
@@ -42,7 +42,7 @@ function main() {
   // gl.getExtension('OES_element_index_uint');
 
   // load in the mesh (this reads all vertex and face information from the .obj file)
-  var objStr = document.getElementById('decorations.obj').innerHTML;
+  var objStr = document.getElementById("decorations.obj").innerHTML;
   var mesh = new OBJ.Mesh(objStr);
   OBJ.initMeshBuffers(gl, mesh);
 
@@ -50,49 +50,67 @@ function main() {
   for (var i = 0; i < mesh.vertices.length; i++) {
     mesh.vertexNormals[i] = 0;
   }
-  
+
   // helper function to extract vertex position from array of vertices
   function vec3FromArray(vertices, index) {
-    return vec3.fromValues(vertices[3*index+0], vertices[3*index+1], vertices[3*index+2]);
+    return vec3.fromValues(
+      vertices[3 * index + 0],
+      vertices[3 * index + 1],
+      vertices[3 * index + 2]
+    );
   }
 
   // ======== TASK 2 ========
-  
+
   // go through all triangles
-  for (var i = 0; i < mesh.indices.length/3; i++) {
-
+  for (var i = 0; i < mesh.indices.length / 3; i++) {
     // get vertices of this triangle
-    var v0 = vec3FromArray(mesh.vertices, mesh.indices[3*i+0]);
-    var v1 = vec3FromArray(mesh.vertices, mesh.indices[3*i+1]);
-    var v2 = vec3FromArray(mesh.vertices, mesh.indices[3*i+2]);
-
+    let v0 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 0]);
+    let v1 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 1]);
+    let v2 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 2]);
     // compute edges `a` and `b`
-    // TODO ...
-
+    let a = vec3.create();
+    vec3.subtract(a, v1, v0);
+    let b = vec3.create();
+    vec3.subtract(b, v2, v0);
     // normal is normalized cross product of edges
-    // TODO ...
-
+    let normal = vec3.create();
+    vec3.cross(normal, a, b);
+    vec3.normalize(normal, normal);
     // add normal to all vertex normals of this triangle
-    // TODO ...
+    for (let j = 0; j < 3; j++) {
+      let vIndex = mesh.indices[3 * i + j];
+      for (let k = 0; k < 3; k++) {
+        mesh.vertexNormals[3 * vIndex + k] +=
+          normal[k] * Math.acos(vec3.dot(a, b)); // Note: weighting by the angle is more accurate, but not necessary in this example (negligible effect)
+      }
+    }
   }
-  
-  // since we've added normals of all triangles a vertex is connected to, 
+
+  // since we've added normals of all triangles a vertex is connected to,
   // we need to normalize the vertex normals
-  for (var i = 0; i < mesh.vertexNormals.length/3; i++) {
-    // TODO ...
+  for (var i = 0; i < mesh.vertexNormals.length / 3; i++) {
+    var normal = vec3FromArray(mesh.vertexNormals, i);
+    vec3.normalize(normal, normal);
+    // and copy back to mesh normal array
+    for (var k = 0; k < 3; k++) {
+      mesh.vertexNormals[3 * i + k] = normal[k];
+    }
   }
   // ====== END TASK 2 ======
 
   // ======== TASK 3a ========
 
   // initialize the color array (Hint: remember that mesh.vertices is of length 3 * number of vertices (x, y, z each))
-  // TODO ...
+  mesh.vertexColors = new Array((mesh.vertices.length / 3) * 4).fill(1.0);
 
   // for each vertex set a custom color
-  // TODO ...
-
+  for (var i = 0; i < mesh.vertices.length / 3; i++) {
+    var new_color = calcVertexColor(vec3FromArray(mesh.vertices, i));
+    for (var k = 0; k < 4; k++) mesh.vertexColors[4 * i + k] = new_color[k];
+  }
   // ====== END TASK 3a ======
-  
+
   // Initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
@@ -100,13 +118,49 @@ function main() {
   // ======== TASK 1a ========
 
   // Vertices
-  // TODO ...
+  let vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertices),
+    gl.STATIC_DRAW
+  );
+  let aVertexPosition = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexPosition);
 
   // Vertex Normals
-  // TODO ...
+  let normalBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertexNormals),
+    gl.STATIC_DRAW
+  );
+  var aVertexNormal = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+  gl.vertexAttribPointer(aVertexNormal, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexNormal);
+
+  // Vertex Colors
+  let colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array(mesh.vertexColors),
+    gl.STATIC_DRAW
+  );
+  var aVertexColor = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  gl.vertexAttribPointer(aVertexColor, 4, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(aVertexColor);
 
   // Faces (i.e., vertex indices for forming the triangles)
-  // TODO ...
+  let facesBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, facesBuffer);
+  gl.bufferData(
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(mesh.indices),
+    gl.STATIC_DRAW
+  );
 
   // ====== END TASK 1a ======
 
@@ -129,8 +183,13 @@ function main() {
 
     // define a light position in world coordinates
     let r = 55.0;
-    var lightPos = vec4.fromValues(Math.sin(Math.PI/2) * r, Math.cos(Math.PI/2) * r, -60.0, 1.0);
-    
+    var lightPos = vec4.fromValues(
+      Math.sin(Math.PI / 2) * r,
+      Math.cos(Math.PI / 2) * r,
+      -60.0,
+      1.0
+    );
+
     // build the projection and model-view matrices
     const fieldOfView = (45 * Math.PI) / 180; // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -142,28 +201,53 @@ function main() {
     // maps object space to world space
     // translation by (0, -25, -60), rotation by -pi/2 around x, rotation by pi/3 around z
     const modelViewMatrix = mat4.fromValues(
-           0.5,       0,  -0.86602,       0, 
-      -0.86602,       0,      -0.5,       0, 
-             0,       1,         0,       0, 
-             0,     -25,       -60,       1
-      );
+      0.5,
+      0,
+      -0.86602,
+      0,
+      -0.86602,
+      0,
+      -0.5,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      -25,
+      -60,
+      1
+    );
 
     // ======== TASK 3b ========
-
-    // TODO ...
-
+    mat4.rotate(
+      modelViewMatrix, // destination matrix
+      modelViewMatrix, // matrix to rotate
+      squareRotation / 2, // amount to rotate in radians
+      [0, 0, 1] // axis to rotate around
+    );
     // ====== END TASK 3b ======
 
     // ======== TASK 1b ========
 
     // set the shader program
-    // TODO ...
+    gl.useProgram(shaderProgram);
 
     // bind the location of the uniform variables
-    // TODO ...
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+      false,
+      projectionMatrix
+    );
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+      false,
+      modelViewMatrix
+    );
+    gl.uniform4fv(gl.getUniformLocation(shaderProgram, "uLightPos"), lightPos);
 
     // finally, draw the mesh
-    // TODO ...
+    gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 
     // ====== END TASK 1b ======
 
@@ -193,8 +277,8 @@ function initShaderProgram(gl, vsSource, fsSource) {
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     alert(
       `Unable to initialize the shader program: ${gl.getProgramInfoLog(
-        shaderProgram,
-      )}`,
+        shaderProgram
+      )}`
     );
     return null;
   }
@@ -218,7 +302,7 @@ function loadShader(gl, type, source) {
   // See if it compiled successfully
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert(
-      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`,
+      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`
     );
     gl.deleteShader(shader);
     return null;
