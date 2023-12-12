@@ -12,10 +12,10 @@ map, and compute environment-based lighting,
 */
 
 // Import the shader code
-import vsSource from './shaders/vertexShader.js';
-import fsSource from './shaders/fragmentShader.js';
-import vsSkyboxSource from './shaders/skyboxVertexShader.js';
-import fsSkyboxSource from './shaders/sykboxFragmentShader.js';
+import vsSource from "./shaders/vertexShader.js";
+import fsSource from "./shaders/fragmentShader.js";
+import vsSkyboxSource from "./shaders/skyboxVertexShader.js";
+import fsSkyboxSource from "./shaders/sykboxFragmentShader.js";
 
 let squareRotation = 0.0;
 let deltaTime = 0;
@@ -24,13 +24,10 @@ main();
 
 // == HELPER FUNCTION FOR COLORING ORNAMENTS
 function calcVertexColor(pCoordinate) {
-  if (pCoordinate[1] < -8)
-    return vec4.fromValues(1.0, 0.25, 0.25, 1.0);
-  if (pCoordinate[1] < 9)
-    return vec4.fromValues(0.25, 1.0, 0.25, 1.0);
+  if (pCoordinate[1] < -8) return vec4.fromValues(1.0, 0.25, 0.25, 1.0);
+  if (pCoordinate[1] < 9) return vec4.fromValues(0.25, 1.0, 0.25, 1.0);
   return vec4.fromValues(0.25, 0.25, 1.0, 1.0);
 }
-
 
 function main() {
   /** @type {WebGLRenderingContext} */
@@ -39,7 +36,7 @@ function main() {
   const canvas = document.getElementById("glcanvas");
 
   if (canvas == null) {
-    alert ("Cannot instantiate canvas. Consider using vscode-preview-server.");
+    alert("Cannot instantiate canvas. Consider using vscode-preview-server.");
   }
   // Initialize the GL context
   const gl = canvas.getContext("webgl"); // use "experimental-webgl" for Edge browser
@@ -65,9 +62,9 @@ function main() {
   OBJ.initMeshBuffers(gl, mesh);
 
   // Load texture
-  const textureMap = loadTexture(gl, 'textures/bauble_BaseColor.png');
+  const textureMap = loadTexture(gl, "textures/bauble_BaseColor.png");
   // Load normal map
-  const normalMap = loadTexture(gl, 'textures/bauble__normal.png');
+  const normalMap = loadTexture(gl, "textures/bauble__normal.png");
   // Load environment map
   const envMap = loadCubeMap(gl);
 
@@ -82,16 +79,8 @@ function main() {
   var modelMatrix = mat4.create();
 
   // Create skybox positions
-  var positions = new Float32Array(
-    [-1,  1,
-      1, -1,
-      -1, -1,
-      -1,  1,
-      1, -1,
-      1,  1
-    ]);
-  
-  
+  var positions = new Float32Array([-1, 1, 1, -1, -1, -1, -1, 1, 1, -1, 1, 1]);
+
   // compute normals per vertex
   // let's make sure all the normals are zero
   for (var i = 0; i < mesh.vertices.length; i++) {
@@ -99,23 +88,27 @@ function main() {
     mesh.tangents[i] = 0;
     mesh.bitangents[i] = 0;
   }
-  
+
   // helper function to extract vertex position from array of vertices
   function vec3FromArray(vertices, index) {
-    return vec3.fromValues(vertices[3*index+0], vertices[3*index+1], vertices[3*index+2]);
+    return vec3.fromValues(
+      vertices[3 * index + 0],
+      vertices[3 * index + 1],
+      vertices[3 * index + 2]
+    );
   }
 
   // helper function to extract tex coordinates from arrray of coordinates
   function vec2FromArray(texcoords, index) {
-    return vec2.fromValues(texcoords[2*index+0], texcoords[2*index+1]);
+    return vec2.fromValues(texcoords[2 * index + 0], texcoords[2 * index + 1]);
   }
-  
+
   // go through all triangles
-  for (var i = 0; i < mesh.indices.length/3; i++) {
+  for (var i = 0; i < mesh.indices.length / 3; i++) {
     // get vertices of this triangle
-    var v0 = vec3FromArray(mesh.vertices, mesh.indices[3*i+0]);
-    var v1 = vec3FromArray(mesh.vertices, mesh.indices[3*i+1]);
-    var v2 = vec3FromArray(mesh.vertices, mesh.indices[3*i+2]);
+    var v0 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 0]);
+    var v1 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 1]);
+    var v2 = vec3FromArray(mesh.vertices, mesh.indices[3 * i + 2]);
     // compute edges `a` and `b`
     var a = vec3.create();
     vec3.subtract(a, v1, v0);
@@ -159,9 +152,9 @@ function main() {
 		*/
 
     // get vertices in texture coordinates
-    var t0 = vec2FromArray(mesh.textures, mesh.indices[3*i+0]);
-    var t1 = vec2FromArray(mesh.textures, mesh.indices[3*i+1]);
-    var t2 = vec2FromArray(mesh.textures, mesh.indices[3*i+2]);
+    var t0 = vec2FromArray(mesh.textures, mesh.indices[3 * i + 0]);
+    var t1 = vec2FromArray(mesh.textures, mesh.indices[3 * i + 1]);
+    var t2 = vec2FromArray(mesh.textures, mesh.indices[3 * i + 2]);
 
     // get edges in texture space
     var ta = vec2.create();
@@ -183,29 +176,36 @@ function main() {
     var bitang = vec3.create();
 
     // ================ TASK 3a) =======================
-    // Compute the three coordinates of your tangent and 
+    // Compute the three coordinates of your tangent and
     // bitangent. Don't forget to normalize.
 
-    // TODO ...
+    tang[0] = a[0] * M_inv[0] + b[0] + M_inv[1];
+    tang[1] = a[1] * M_inv[0] + b[1] + M_inv[1];
+    tang[2] = a[2] * M_inv[0] + b[2] + M_inv[1];
 
+    bitang[0] = a[0] * M_inv[2] + b[0] + M_inv[3];
+    bitang[1] = a[1] * M_inv[2] + b[1] + M_inv[3];
+    bitang[2] = a[2] * M_inv[2] + b[2] + M_inv[3];
+
+    vec3.normalize(tang, tang);
+    vec3.normalize(bitang, tang);
     // ================ END TASK 3a) ===================
-
 
     // add normal to all vertex normals of this triangle
     for (var j = 0; j < 3; j++) {
-      var vIndex = mesh.indices[3*i+j];
+      var vIndex = mesh.indices[3 * i + j];
       for (var k = 0; k < 3; k++) {
-        mesh.vertexNormals[3*vIndex+k] += n[k] * Math.acos(vec3.dot(a, b)); // Note: weighting by the angle is more accurate, but not necessary in this example (negligible effect)
-        mesh.tangents[3*vIndex+k] += tang[k];
-        mesh.bitangents[3*vIndex+k] += bitang[k];
+        mesh.vertexNormals[3 * vIndex + k] += n[k] * Math.acos(vec3.dot(a, b)); // Note: weighting by the angle is more accurate, but not necessary in this example (negligible effect)
+        mesh.tangents[3 * vIndex + k] += tang[k];
+        mesh.bitangents[3 * vIndex + k] += bitang[k];
       }
     }
   }
-  
-  // since we've added normals of all triangles a vertex is connected to, 
+
+  // since we've added normals of all triangles a vertex is connected to,
   // we need to normalize the vertex normal
   // we do the same for tangents and bitangents
-  for (var i = 0; i < mesh.vertexNormals.length/3; i++) {
+  for (var i = 0; i < mesh.vertexNormals.length / 3; i++) {
     var n = vec3FromArray(mesh.vertexNormals, i);
     vec3.normalize(n, n);
     var tang = vec3FromArray(mesh.tangents, i);
@@ -216,7 +216,7 @@ function main() {
     // orthogonalize tangen and bitangent
     var scaledNormalTang = vec3.create();
     vec3.scale(scaledNormalTang, n, vec3.dot(n, tang));
-    vec3.subtract(tang, tang, scaledNormalTang)
+    vec3.subtract(tang, tang, scaledNormalTang);
     var scaledNormalBiTang = vec3.create();
     vec3.scale(scaledNormalBiTang, n, vec3.dot(n, bitang));
     vec3.subtract(bitang, bitang, scaledNormalBiTang);
@@ -225,43 +225,52 @@ function main() {
 
     // and copy back to mesh normal, tang, and bitang array
     for (var k = 0; k < 3; k++) {
-      mesh.vertexNormals[3*i+k] = n[k];
-      mesh.tangents[3*i+k] = tang[k];
-      mesh.bitangents[3*i+k] = bitang[k];
+      mesh.vertexNormals[3 * i + k] = n[k];
+      mesh.tangents[3 * i + k] = tang[k];
+      mesh.bitangents[3 * i + k] = bitang[k];
     }
   }
- 
+
   // Set the color of the vertices (optional)
   // initialize the color array (Hint: remember that mesh.vertices is of length 3 * number of vertices (x, y, z each))
-  mesh.vertexColors = new Array(mesh.vertices.length/3*4).fill(1.0);
+  mesh.vertexColors = new Array((mesh.vertices.length / 3) * 4).fill(1.0);
 
   // for each vertex set a custom color
-  for (var i = 0; i < mesh.vertices.length/3; i++) {
-    var new_color = calcVertexColor(vec3FromArray(mesh.vertices, i));  
-    for (var k = 0; k < 4; k++)
-      mesh.vertexColors[4*i+k] = new_color[k];
+  for (var i = 0; i < mesh.vertices.length / 3; i++) {
+    var new_color = calcVertexColor(vec3FromArray(mesh.vertices, i));
+    for (var k = 0; k < 4; k++) mesh.vertexColors[4 * i + k] = new_color[k];
   }
- 
+
   // initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
 
   // ------------------
   // SKYBOX
   // ------------------
-  const skyboxShaderProgram = initShaderProgram(gl, vsSkyboxSource, fsSkyboxSource);
+  const skyboxShaderProgram = initShaderProgram(
+    gl,
+    vsSkyboxSource,
+    fsSkyboxSource
+  );
   gl.useProgram(skyboxShaderProgram);
-  setup_skybox()
+  setup_skybox();
   function setup_skybox() {
-    var quadPosBuffer = gl.createBuffer()
+    var quadPosBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadPosBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    var skyboxVertexLocation = gl.getAttribLocation(skyboxShaderProgram, "aPosition");
+    var skyboxVertexLocation = gl.getAttribLocation(
+      skyboxShaderProgram,
+      "aPosition"
+    );
     gl.vertexAttribPointer(skyboxVertexLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(skyboxVertexLocation);
     // lookup uniforms
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, envMap);
-    var skyboxLocation = gl.getUniformLocation(skyboxShaderProgram, "uSamplerSkybox");
+    var skyboxLocation = gl.getUniformLocation(
+      skyboxShaderProgram,
+      "uSamplerSkybox"
+    );
     gl.uniform1i(skyboxLocation, 0);
   }
 
@@ -270,78 +279,140 @@ function main() {
   // --------------------------
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
   gl.useProgram(shaderProgram);
-  setup_bauble()
-  function setup_bauble(){
+  setup_bauble();
+  function setup_bauble() {
     // VERTICES
     var vertBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertices), gl.STATIC_DRAW);
-    var baublesVertexLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.vertices),
+      gl.STATIC_DRAW
+    );
+    var baublesVertexLocation = gl.getAttribLocation(
+      shaderProgram,
+      "aVertexPosition"
+    );
     gl.vertexAttribPointer(baublesVertexLocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(baublesVertexLocation);
 
     // VERTEX INDICES
     var idcsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idcsBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.indices), gl.STATIC_DRAW);
+    gl.bufferData(
+      gl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array(mesh.indices),
+      gl.STATIC_DRAW
+    );
 
     // NORMALS
     var normalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexNormals), gl.STATIC_DRAW);
-    var baublesNormallocation = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.vertexNormals),
+      gl.STATIC_DRAW
+    );
+    var baublesNormallocation = gl.getAttribLocation(
+      shaderProgram,
+      "aVertexNormal"
+    );
     gl.vertexAttribPointer(baublesNormallocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(baublesNormallocation);
 
     // TANGENTS
     var tangentBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.tangents), gl.STATIC_DRAW);
-    var baublesTangentLocation = gl.getAttribLocation(shaderProgram, "aVertexTangent");
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.tangents),
+      gl.STATIC_DRAW
+    );
+    var baublesTangentLocation = gl.getAttribLocation(
+      shaderProgram,
+      "aVertexTangent"
+    );
     gl.vertexAttribPointer(baublesTangentLocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(baublesTangentLocation);
 
     // BITANGENTS
     var bitangentBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.bitangents), gl.STATIC_DRAW);
-    var baublesBitangentLocation = gl.getAttribLocation(shaderProgram, "aVertexBitangent");
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.bitangents),
+      gl.STATIC_DRAW
+    );
+    var baublesBitangentLocation = gl.getAttribLocation(
+      shaderProgram,
+      "aVertexBitangent"
+    );
     gl.vertexAttribPointer(baublesBitangentLocation, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(baublesBitangentLocation);
 
     // VERTEX COLORS
     var colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.vertexColors), gl.STATIC_DRAW);
-    var baublesVertexColorsLocation = gl.getAttribLocation(shaderProgram, "aVertexColor");
-    gl.vertexAttribPointer(baublesVertexColorsLocation, 4, gl.FLOAT, false, 0, 0);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.vertexColors),
+      gl.STATIC_DRAW
+    );
+    var baublesVertexColorsLocation = gl.getAttribLocation(
+      shaderProgram,
+      "aVertexColor"
+    );
+    gl.vertexAttribPointer(
+      baublesVertexColorsLocation,
+      4,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
     gl.enableVertexAttribArray(baublesVertexColorsLocation);
 
     // TEXTURES
     // Handle texture coordinates
     var texBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.textures), gl.STATIC_DRAW);
-    const texcoordLocation = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(mesh.textures),
+      gl.STATIC_DRAW
+    );
+    const texcoordLocation = gl.getAttribLocation(
+      shaderProgram,
+      "aTextureCoord"
+    );
     gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(texcoordLocation);
 
     // Texture to shader
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, textureMap);
-    var textureLocation = gl.getUniformLocation(shaderProgram, "uSamplerTexture")
+    var textureLocation = gl.getUniformLocation(
+      shaderProgram,
+      "uSamplerTexture"
+    );
     gl.uniform1i(textureLocation, 0);
 
     // NormalMap to shader
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, normalMap);
-    var normalMapLocation = gl.getUniformLocation(shaderProgram, "uSamplerNormalMap")
+    var normalMapLocation = gl.getUniformLocation(
+      shaderProgram,
+      "uSamplerNormalMap"
+    );
     gl.uniform1i(normalMapLocation, 1);
 
     // Environment map to shader
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, envMap);
-    const envMapLocation = gl.getUniformLocation(shaderProgram, "uSamplerEnvMap")
+    const envMapLocation = gl.getUniformLocation(
+      shaderProgram,
+      "uSamplerEnvMap"
+    );
     gl.uniform1i(envMapLocation, 2);
   }
 
@@ -353,7 +424,7 @@ function main() {
     now *= 0.001; // convert to seconds
     deltaTime = now - then;
     then = now;
-    
+
     // ------------------------
     // Render baubles
     // ------------------------
@@ -369,58 +440,40 @@ function main() {
     const viewSkyBoxMatrix = mat4.create();
 
     // view matrix for baubles
-    mat4.translate(
-      viewMatrix,
-      viewMatrix,
-      [0.0, -25.0, -60.0],
-    );
-    mat4.rotate(
-      viewMatrix,
-      viewMatrix,
-      -3.14/2,
-      [1, 0, 0],
-    );
-    mat4.rotate(
-      viewMatrix,
-      viewMatrix,
-      +3.14/3,
-      [0, 0, 1],
-    );
-    mat4.rotate(
-      viewMatrix,
-      viewMatrix,
-      squareRotation/2,
-      [0, 0, 1],
-    );
+    mat4.translate(viewMatrix, viewMatrix, [0.0, -25.0, -60.0]);
+    mat4.rotate(viewMatrix, viewMatrix, -3.14 / 2, [1, 0, 0]);
+    mat4.rotate(viewMatrix, viewMatrix, +3.14 / 3, [0, 0, 1]);
+    mat4.rotate(viewMatrix, viewMatrix, squareRotation / 2, [0, 0, 1]);
 
     // view matrix for skybox
-    mat4.translate(
-      viewSkyBoxMatrix,
-      viewSkyBoxMatrix,
-      [0.0, -25.0, -60.0],
-    );
+    mat4.translate(viewSkyBoxMatrix, viewSkyBoxMatrix, [0.0, -25.0, -60.0]);
 
     // Comment out the rotation below to avoid rotating around the skybox
     mat4.rotate(
       viewSkyBoxMatrix,
       viewSkyBoxMatrix,
-      -squareRotation/2,
-      [0, 1, 0],
+      -squareRotation / 2,
+      [0, 1, 0]
     );
 
     // get current camera position
     const invViewMatrix = mat4.create();
     mat4.invert(invViewMatrix, viewMatrix);
-    
+
     //indices for last row
-    var cameraPos = vec4.fromValues(viewMatrix[3], viewMatrix[7], viewMatrix[11], 1.0);
+    var cameraPos = vec4.fromValues(
+      viewMatrix[3],
+      viewMatrix[7],
+      viewMatrix[11],
+      1.0
+    );
 
     // create modelViewMatrix
     const modelViewMatrix = mat4.create();
     mat4.multiply(modelViewMatrix, modelMatrix, viewMatrix);
     let r = 40.0;
     var lightPos = vec4.fromValues(Math.sin(1) * r, Math.cos(1) * r, 20.0, 1.0);
-   
+
     // create modelNormalMatrix (M_model^-T)
     const modelNormalMatrix = mat4.create();
     mat4.invert(modelNormalMatrix, modelMatrix);
@@ -432,38 +485,32 @@ function main() {
       projectionMatrix
     );
     gl.uniformMatrix4fv(
-        gl.getUniformLocation(shaderProgram, "uModelMatrix"),
-        false,
-        modelMatrix,
+      gl.getUniformLocation(shaderProgram, "uModelMatrix"),
+      false,
+      modelMatrix
     );
     gl.uniformMatrix4fv(
       gl.getUniformLocation(shaderProgram, "uModelNormalMatrix"),
       false,
-      modelNormalMatrix,
+      modelNormalMatrix
     );
     gl.uniformMatrix4fv(
       gl.getUniformLocation(shaderProgram, "uViewMatrix"),
       false,
-      viewMatrix,
+      viewMatrix
     );
     gl.uniformMatrix4fv(
       gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
       false,
-      modelViewMatrix,
+      modelViewMatrix
     );
     gl.uniformMatrix4fv(
       gl.getUniformLocation(shaderProgram, "uViewSkyboxMatrix"),
       false,
-      viewSkyBoxMatrix,
+      viewSkyBoxMatrix
     );
-    gl.uniform4fv(
-      gl.getUniformLocation(shaderProgram, "lightPos"),
-      lightPos,
-    );
-    gl.uniform4fv(
-      gl.getUniformLocation(shaderProgram, "cameraPos"),
-      cameraPos,
-    );
+    gl.uniform4fv(gl.getUniformLocation(shaderProgram, "lightPos"), lightPos);
+    gl.uniform4fv(gl.getUniformLocation(shaderProgram, "cameraPos"), cameraPos);
     gl.depthFunc(gl.LEQUAL); // near things obscure far things
     gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 
@@ -522,8 +569,8 @@ function initShaderProgram(gl, vsSource, fsSource) {
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     alert(
       `Unable to initialize the shader program: ${gl.getProgramInfoLog(
-        shaderProgram,
-      )}`,
+        shaderProgram
+      )}`
     );
     return null;
   }
@@ -545,7 +592,7 @@ function loadShader(gl, type, source) {
   // See if it compiled successfully
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     alert(
-      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`,
+      `An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`
     );
     gl.deleteShader(shader);
     return null;
@@ -555,40 +602,40 @@ function loadShader(gl, type, source) {
 }
 
 // Loads six images into a cubemap.
-function loadCubeMap(gl){
+function loadCubeMap(gl) {
   // Create a texture.
   var texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
-     
+
   const faceInfos = [
     {
-      target: gl.TEXTURE_CUBE_MAP_POSITIVE_X, 
-      url: 'cubemaps/christmas_polyhaven/px.png',
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+      url: "cubemaps/christmas_polyhaven/px.png",
     },
     {
-      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 
-      url: 'cubemaps/christmas_polyhaven/nx.png',
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+      url: "cubemaps/christmas_polyhaven/nx.png",
     },
     {
-      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 
-      url: 'cubemaps/christmas_polyhaven/py.png',
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+      url: "cubemaps/christmas_polyhaven/py.png",
     },
     {
-      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 
-      url: 'cubemaps/christmas_polyhaven/ny.png',
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+      url: "cubemaps/christmas_polyhaven/ny.png",
     },
     {
-      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 
-      url: 'cubemaps/christmas_polyhaven/pz.png',
+      target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+      url: "cubemaps/christmas_polyhaven/pz.png",
     },
     {
-      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 
-      url: 'cubemaps/christmas_polyhaven/nz.png',
+      target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+      url: "cubemaps/christmas_polyhaven/nz.png",
     },
   ];
   faceInfos.forEach((faceInfo) => {
-    const {target, url} = faceInfo;
-     
+    const { target, url } = faceInfo;
+
     // Upload the canvas to the cubemap face.
     const level = 0;
     const internalFormat = gl.RGBA;
@@ -596,14 +643,24 @@ function loadCubeMap(gl){
     const height = 1024;
     const format = gl.RGBA;
     const type = gl.UNSIGNED_BYTE;
-     
+
     // setup each face so it's immediately renderable
-    gl.texImage2D(target, level, internalFormat, width, height, 0, format, type, null);
-     
+    gl.texImage2D(
+      target,
+      level,
+      internalFormat,
+      width,
+      height,
+      0,
+      format,
+      type,
+      null
+    );
+
     // Asynchronously load an image
     const image = new Image();
     image.src = url;
-    image.addEventListener('load', function() {
+    image.addEventListener("load", function () {
       // Now that the image has loaded upload it to the texture.
       gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
       gl.texImage2D(target, level, internalFormat, format, type, image);
@@ -611,7 +668,11 @@ function loadCubeMap(gl){
     });
   });
   gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(
+    gl.TEXTURE_CUBE_MAP,
+    gl.TEXTURE_MIN_FILTER,
+    gl.LINEAR_MIPMAP_LINEAR
+  );
 
   return texture;
 }
@@ -634,36 +695,50 @@ function loadTexture(gl, url) {
   const border = 0;
   const srcFormat = gl.RGBA;
   const srcType = gl.UNSIGNED_BYTE; // reads to [0, 255] range, otherwise we would need gl.FLOAT
-  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
-  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                width, height, border, srcFormat, srcType,
-                pixel);
+  const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    level,
+    internalFormat,
+    width,
+    height,
+    border,
+    srcFormat,
+    srcType,
+    pixel
+  );
 
   // Create an image object so that we can load an image from file
   const image = new Image();
-  image.onload = function() {
+  image.onload = function () {
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                  srcFormat, srcType, image);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      level,
+      internalFormat,
+      srcFormat,
+      srcType,
+      image
+    );
 
     // WebGL1 has different requirements for power of 2 images
     // vs non power of 2 images so check if the image is a
     // power of 2 in both dimensions.
     if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
-       // Yes, it's a power of 2. Generate mips.
-       gl.generateMipmap(gl.TEXTURE_2D);
+      // Yes, it's a power of 2. Generate mips.
+      gl.generateMipmap(gl.TEXTURE_2D);
     } else {
-       // No, it's not a power of 2. Turn of mips and set
-       // wrapping to clamp to edge
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      // No, it's not a power of 2. Turn of mips and set
+      // wrapping to clamp to edge
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   };
-  // Assigned url is the path to the image 
+  // Assigned url is the path to the image
   image.src = url;
 
   return texture;

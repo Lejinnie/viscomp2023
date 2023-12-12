@@ -1,4 +1,4 @@
-export default /*glsl*/`
+export default /*glsl*/ `
   precision highp float;
   uniform vec4 uCameraPos;             // camera position in world coordinates
   uniform sampler2D uSamplerTexture;   // sampler bauble texture
@@ -21,9 +21,11 @@ export default /*glsl*/`
   // the diffuse light and in its second component the intensity of the specular light.
   vec2 computeDiffuseSpecIntens(in vec3 position, in vec3 normal, in vec3 cameraPos, in vec3 lightPos)
   {
-    // TODO ...
-
-    return vec2(1, 0);	    // Return dummy value
+    highp float diffuse = clamp(dot(normal,normalize(lightPos-position)),0.0,1.0);
+    vec3 r = normalize(-reflect(lightPos-position,normal));
+    highp float specular = pow(clamp(dot(r,normalize(cameraPos-position)),0.0,1.0),50.0);
+  
+    return vec2(diffuse, specular);	    // Return dummy value
   }
   // ====== END TASK 1a) ======
 
@@ -38,7 +40,7 @@ export default /*glsl*/`
     // Perform a texture lookup into bauble texture.
     // TODO ...
 
-    vec4 txtColor = color;    // Return RGB color value
+    vec4 txtColor = texture2D(uSamplerTexture, texCoord);    // Return RGB color value
     // ======== END TASK 2b) ========
 
 
@@ -47,9 +49,13 @@ export default /*glsl*/`
     // and use them to perturb the world tangent, world bitangent and world normal.
     // TODO ...
   
-    vec3 normal = normalize(world_normal.xyz);  // Use pre-computed world normals
+    vec3 normalMap = texture2D(uSamplerNormalMap, texCoord).rgb;
+    normalMap = normalize(normalMap);
+
+    vec3 normal = normalize(world_normal.xyz) * normalize(world_tang.xyz) * normalMap.r + normalize(world_bitang.xyz) * normalMap.g + normalize(world_normal.xyz) * normalMap.b;
+    // Use pre-computed world normals
+
     // ======== END TASK 3a) ========
-    
 
     // Phong model
     vec2 diffuseIntensitySpec = computeDiffuseSpecIntens(world_pos.xyz, normal, uCameraPos.xyz, world_light.xyz);
@@ -69,4 +75,3 @@ export default /*glsl*/`
     gl_FragColor = vColor + 0.8 * colReflected; 
   } 
   `;
- 
